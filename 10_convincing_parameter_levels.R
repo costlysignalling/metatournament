@@ -1,0 +1,57 @@
+source('10_convincing_model.R')
+campaign_plane_reference<-local({d<-NULL;function(beta,phi,B=50){
+ if(is.null(d))d<<-readRDS('05_energy_allocation_refined_inputs.rds')
+ k<-which(abs(d$phis-phi[1])<1e-10);l<-which(abs(d$phis-phi[2])<1e-10)
+ stopifnot(length(k)==1,length(l)==1,B==d$B)
+ interpolate<-function(z){a<-d$betas;i<-max(1,min(length(a)-1,findInterval(beta[1],a)))
+  j<-max(1,min(length(a)-1,findInterval(beta[2],a)));u<-(beta[1]-a[i])/(a[i+1]-a[i]);v<-(beta[2]-a[j])/(a[j+1]-a[j])
+  (1-u)*(1-v)*z[i,j]+u*(1-v)*z[i+1,j]+(1-u)*v*z[i,j+1]+u*v*z[i+1,j+1]}
+ c(E1=interpolate(d$panels[[k,l]]$equilibrium),Lratio=exp(interpolate(log(d$panels[[k,l]]$ratio_equilibrium))))
+}})
+campaign_level_cell<-function(beta,phi,N=30,B=50,efficiency=.1,n=512L,npressure=81L,nx=24L){
+ den<-convincing_density(n);core<-convincing_compile();ref<-campaign_plane_reference(beta,phi,B)
+ # Existing deterministic global solution supplies a close starting ratio.
+ q0<-core$convincing_receivers_cpp(den$talent,c(B/2,1,ref['Lratio']),0,
+  beta[1],beta[2],phi[1],phi[2],B,1e60,nx)[,1]
+ m<-c(sum(den$weights*q0),sum(den$weights*boredom_w(q0,den$talent[,1],beta[1],phi[1])),
+  sum(den$weights*boredom_w(B-q0,den$talent[,2],beta[2],phi[2])))
+ eq<-finite_pool_compile()$finite_pool_density_cpp(den$talent,den$weights,m,
+  beta[1],beta[2],phi[1],phi[2],B,.5,N,40L,250L,2e-5,TRUE)
+ if(!eq$converged&&N>1e30){
+  evaluate<-function(z){
+   a<-core$convincing_adaptive_moments_cpp(c(B/2,1,exp(z)),0,beta[1],beta[2],phi[1],phi[2],B,N,boredom_slog(),80L,1e-5)$moments[1,]
+   list(residual=z-log(a[1]/a[2]*a[3]/a[4]),moment=a[1:3])
+  }
+  z0<-log(ref['Lratio']);bracket<-z0+c(-.15,.15)
+  for(width in c(.15,.5,1,3)){
+   bracket<-z0+c(-width,width)
+   if(evaluate(bracket[1])$residual*evaluate(bracket[2])$residual<=0)break
+  }
+  root<-uniroot(function(z)evaluate(z)$residual,bracket,tol=2e-5)$root
+  ans<-evaluate(root);eq$moment<-ans$moment;eq$residual<-abs(ans$residual);eq$converged<-eq$residual<1e-4
+ }
+ if(!eq$converged&&N<=1e30){
+  temporary<-list(beta=beta,phi=phi,B=B,N=N,
+   baseline=list(responsive=list(moment=eq$moment)))
+  baseline<-convincing_adaptive_baseline(temporary,tolerance=1e-6)
+  eq$moment<-baseline$responsive$moment;eq$residual<-baseline$responsive$residual
+  eq$converged<-eq$residual<2e-6
+ }
+ if(!eq$converged)stop('Parameter-cell reference unresolved.')
+ effort<-seq(-B,B,length.out=npressure);pressure<-efficiency*effort
+ q<-core$convincing_receivers_cpp(den$talent,eq$moment,pressure,
+  beta[1],beta[2],phi[1],phi[2],B,N,nx)
+ moments<-t(vapply(seq_along(effort),function(k){x<-q[,k];c(sum(den$weights*x),
+  sum(den$weights*boredom_w(x,den$talent[,1],beta[1],phi[1])),
+  sum(den$weights*boredom_w(B-x,den$talent[,2],beta[2],phi[2])),sum(den$weights*(B-x)))},numeric(4)))
+ moments[(npressure+1)/2,]<-c(eq$moment,B-eq$moment[1])
+ bad<-which(apply(moments<=0,1,any))
+ if(length(bad))moments[bad,]<-core$convincing_adaptive_moments_cpp(eq$moment,pressure[bad],
+  beta[1],beta[2],phi[1],phi[2],B,N,boredom_slog(),80L,1e-5)$moments
+ if(any(moments<=0))stop('Empty numerical tail after adaptive repair.')
+ out<-core$convincing_focal_cpp(den$talent,moments,effort,beta[1],beta[2],phi[1],phi[2],B,N,nx,TRUE,FALSE)
+ c(campaign=sum(den$weights*abs(out[,3]))/B,
+  campaign1=sum(den$weights*pmax(out[,3],0))/B,campaign2=sum(den$weights*pmax(-out[,3],0))/B,
+  training1=sum(den$weights*out[,1])/B,training2=sum(den$weights*out[,2])/B,
+  baseline_residual=eq$residual)
+}

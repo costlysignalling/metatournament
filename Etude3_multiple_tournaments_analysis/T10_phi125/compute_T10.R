@@ -1,0 +1,15 @@
+Sys.setenv(PKG_CPPFLAGS='-DRCPP_INTERFACE')
+analysis_dir<-if(file.exists('known_talents_participation.cpp')) '.' else
+  file.path('Etude3_multiple_tournaments_analysis','T10_phi125')
+Rcpp::sourceCpp(file.path(analysis_dir,'known_talents_participation.cpp'),
+                cacheDir=file.path(analysis_dir,'participation_cpp_cache'))
+baseline<-read.csv(file.path(analysis_dir,'participation_T7_baseline.csv'))
+stopifnot(max(baseline$N)==262144,nrow(baseline)==1296)
+new_file<-file.path(analysis_dir,'participation_increment_T10.csv')
+participation_compute(262144L,4L,new_file,incremental=TRUE)
+new<-read.csv(new_file)
+stopifnot(nrow(new)==2160)
+all<-rbind(baseline,new)
+stopifnot(nrow(all)==3456,!anyDuplicated(all[c('beta','phi','T','rep','N','k')]))
+write.csv(all,file.path(analysis_dir,'participation_many.csv'),row.names=FALSE)
+cat('All eight panels and T=2,...,10 completed and verified.\n')
