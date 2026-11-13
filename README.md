@@ -71,8 +71,35 @@ it with its preparation script before running a redraw.
 
 ## Interactive figures
 
-After the many-tournament stage, run python 06B_build_cube_viewer.py to
-produce the offline rotatable cube. For the harvesting comparison, run
+[Open the interactive allocation cube](https://costlysignalling.github.io/metatournament/Figure_many_asymmetric_allocation_cube.html).
+Drag either cube to rotate both views. You can also
+[download the standalone HTML](https://raw.githubusercontent.com/costlysignalling/metatournament/main/docs/Figure_many_asymmetric_allocation_cube.html)
+and open it locally. After the many-tournament stage, run
+`python 06B_build_cube_viewer.py` to rebuild it.
+
+### Training allocation pie charts
+
+Run this in R from the repository root. Each entry in the three vectors
+corresponds to one tournament. Here, the fourth tournament has a talent of
+1.5 for the focal actor.
+
+```r
+source("06B_predict_many_tournaments.R")
+many_example(
+  beta = c(0.6, 0.8, 0.4, 0.8),
+  phi = c(0.66, 1, 1.2, 1.4),
+  B = 50,
+  actor = c(1, 1, 1, 1.5)
+)
+```
+
+The function prints the predicted training times and draws one pie chart
+for the fixed reference and one for the responsive equilibrium. It uses
+Rcpp and the C++ toolchain from the setup above.
+
+### Other viewers
+
+For the harvesting comparison, run
 the following in R after the harvesting stage:
 
     source("09_training_comparison.R")
@@ -81,10 +108,7 @@ the following in R after the harvesting stage:
 Then run
 python 09_build_training_comparison.py.
 
-Open those generated HTML files locally, or publish them as static files via
-GitHub Pages. A project Pages site can serve files from a publishing branch
-or folder under https://costlysignalling.github.io/metatournament/. The two
-builders produce self-contained pages.
+Open the generated HTML locally in a browser.
 
 For a cube that recalculates when parameters change, run the many-tournament
 stage to build 06B_cube_web/default_cube.rds, then call

@@ -206,4 +206,4 @@ many_example <- function(beta=c(.6,.4,.4), phi=c(.66,1,1.2), B=50,
 if(sys.nframe()==0L)many_example()
 
 
-many_example(beta=c(.6,.8,.4,0.8),phi=c(.66,1,1.2,1.4),B=50,actor=c(1,1,1,1.5))
+# many_example(beta=c(.6,.8,.4,.8),phi=c(.66,1,1.2,1.4),B=50,actor=c(1,1,1,1.5))
