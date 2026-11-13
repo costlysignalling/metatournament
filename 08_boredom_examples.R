@@ -14,6 +14,8 @@ boredom_hdr<-function(){
 }
 plot_boredom_examples<-function(compulsory=.5,N=30,png=TRUE,pdf=TRUE,variant=c('original','more_boredom'),data=NULL,contours=FALSE,paper=FALSE,stem=NULL){
  variant<-match.arg(variant);tag<-paste0('c_',format(compulsory,trim=TRUE),'_N_',N)
+ more_examples<-variant=='more_boredom'
+ figure_height<-if(more_examples)5.8 else 6.6
  if(is.null(data))data<-readRDS(file.path('08_boredom_results',paste0(if(variant=='original')'examples_'else 'more_boredom_',tag,'.rds')))
  B<-data$B;a<-data$alpha;alim<-range(a);hdr<-boredom_hdr()
  if(contours){ur<-range(unlist(lapply(data$prep,function(p)p$utility)));ulevels<-pretty(ur,12);vir<-hcl.colors(201,'Viridis');ucols<-vir[round((seq(0,1,length.out=201)^.65)*200)+1]}
@@ -58,7 +60,7 @@ plot_boredom_examples<-function(compulsory=.5,N=30,png=TRUE,pdf=TRUE,variant=c('
    if(j==1){axis(2,at=seq(0,2.5,.5),las=1,cex.axis=1.2);mtext(expression(alpha[2]~~'(talent in tournament 2)'),2,line=2.4,cex=.95)}
    if(i==1){
     if(paper)mtext(LETTERS[j],3,line=1.8,at=min(a),adj=0,cex=1.25,font=2,xpd=NA)
-    mtext(bquote(N==.(p$N)),3,line=.15,at=min(a),adj=0,cex=1.0,xpd=NA)
+    if(!more_examples)mtext(bquote(N==.(p$N)),3,line=.15,at=min(a),adj=0,cex=1.0,xpd=NA)
    }
    if(i==1)for(t in 1:2){
     at<-min(a)+c(.48,.88)[t]*diff(alim)
@@ -68,7 +70,9 @@ plot_boredom_examples<-function(compulsory=.5,N=30,png=TRUE,pdf=TRUE,variant=c('
   }
   mtext(expression('Fixed '*E[t]),2,outer=TRUE,at=.76,line=1.25,cex=1.25)
   mtext(expression('Responsive '*E[t]),2,outer=TRUE,at=.26,line=1.25,cex=1.25)
-  mtext(bquote(c==.(sprintf('%.2f',compulsory))),3,outer=TRUE,at=eta_at,line=1.0,cex=1.12)
+  heading<-if(more_examples)bquote(c==.(sprintf('%.2f',compulsory))~~N==.(N)) else
+   bquote(c==.(sprintf('%.2f',compulsory)))
+  mtext(heading,3,outer=TRUE,at=eta_at,line=1.0,cex=1.12)
   if(contours){par(mar=c(4.8,4.2,.95,1.6),pty='m');plot.new()}else{
   par(mar=c(4.8,4.2,.95,1.6),pty='m',xpd=FALSE)
   nr<-ns<-181;d<-seq(0,1,length.out=ns);r<-seq(0,1,length.out=nr)
@@ -88,8 +92,8 @@ plot_boredom_examples<-function(compulsory=.5,N=30,png=TRUE,pdf=TRUE,variant=c('
   }
  }
  if(is.null(stem))stem<-paste0(if(variant=='original')'Figure_local_boredom_examples_'else 'Figure_local_boredom_more_examples_',tag)
- if(png){grDevices::png(paste0(stem,'.png'),width=3640/300,height=6.6,units='in',res=600);tryCatch(draw(),finally=dev.off())}
- if(pdf){cairo_pdf(paste0(stem,'.pdf'),width=3640/300,height=6.6,family='Arial');tryCatch(draw(),finally=dev.off())}
+ if(png){grDevices::png(paste0(stem,'.png'),width=3640/300,height=figure_height,units='in',res=600);tryCatch(draw(),finally=dev.off())}
+ if(pdf){cairo_pdf(paste0(stem,'.pdf'),width=3640/300,height=figure_height,family='Arial');tryCatch(draw(),finally=dev.off())}
  if(interactive())draw();invisible(data)
 }
 if(sys.nframe()==0L)plot_boredom_examples()

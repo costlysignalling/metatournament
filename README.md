@@ -42,6 +42,15 @@ The figures.txt file lists the required manuscript images. A full run checks
 that each one was produced. The numerical assertions and convergence checks
 live in the analysis scripts.
 
+The clean rebuild produced all 70 manuscript figures. Of these, 57 were
+byte-identical to the working exports. The remaining comparisons showed small
+rendering differences, a layout difference in one boredom example, and
+numerical sensitivity near energy-region boundaries. The beta-space energy
+classification agreed at every grid point. Across the three opt-out energy
+figures, 56 of 100,467 panel grid points changed classification near a
+boundary. The rebuilt opt-out grids conserve the total budget and all cells
+meet the solver's residual tolerance of 0.0001.
+
 ## Experiment with the model
 
 From the project root in R, source the experiment you want to run.
